@@ -1,9 +1,7 @@
-Ansible variables
-===============
+# Ansible variables
 
+## Inventory
 
-Inventory
--------------
 The inventory is composed of 3 groups:
 
 * **kube-node** : list of kubernetes nodes where the pods will run.
@@ -14,7 +12,7 @@ Note: do not modify the children of _k8s-cluster_, like putting
 the _etcd_ group into the _k8s-cluster_, unless you are certain
 to do that and you have it fully contained in the latter:
 
-```
+```ShellSession
 k8s-cluster ⊂ etcd => kube-node ∩ etcd = etcd
 ```
 
@@ -27,20 +25,20 @@ not _kube-node_.
 
 There are also two special groups:
 
-* **calico-rr**  : explained for [advanced Calico networking cases](calico.md)
+* **calico-rr** : explained for [advanced Calico networking cases](calico.md)
 * **bastion** : configure a bastion host if your nodes are not directly reachable
 
 Below is a complete inventory example:
 
-```
+```ini
 ## Configure 'ip' variable to bind kubernetes services on a
 ## different ip than the default iface
-node1 ansible_ssh_host=95.54.0.12 ip=10.3.0.1
-node2 ansible_ssh_host=95.54.0.13 ip=10.3.0.2
-node3 ansible_ssh_host=95.54.0.14 ip=10.3.0.3
-node4 ansible_ssh_host=95.54.0.15 ip=10.3.0.4
-node5 ansible_ssh_host=95.54.0.16 ip=10.3.0.5
-node6 ansible_ssh_host=95.54.0.17 ip=10.3.0.6
+node1 ansible_host=95.54.0.12 ip=10.3.0.1
+node2 ansible_host=95.54.0.13 ip=10.3.0.2
+node3 ansible_host=95.54.0.14 ip=10.3.0.3
+node4 ansible_host=95.54.0.15 ip=10.3.0.4
+node5 ansible_host=95.54.0.16 ip=10.3.0.5
+node6 ansible_host=95.54.0.17 ip=10.3.0.6
 
 [kube-master]
 node1
@@ -63,20 +61,19 @@ kube-node
 kube-master
 ```
 
-Group vars and overriding variables precedence
-----------------------------------------------
+## Group vars and overriding variables precedence
 
-The group variables to control main deployment options are located in the directory ``inventory/group_vars``.
-Optional variables are located in the `inventory/group_vars/all.yml`.
+The group variables to control main deployment options are located in the directory ``inventory/sample/group_vars``.
+Optional variables are located in the `inventory/sample/group_vars/all.yml`.
 Mandatory variables that are common for at least one role (or a node group) can be found in the
-`inventory/group_vars/k8s-cluster.yml`.
-There are also role vars for docker, rkt, kubernetes preinstall and master roles.
-According to the [ansible docs](http://docs.ansible.com/ansible/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable),
-those cannot be overriden from the group vars. In order to override, one should use
-the `-e ` runtime flags (most simple way) or other layers described in the docs.
+`inventory/sample/group_vars/k8s-cluster.yml`.
+There are also role vars for docker, kubernetes preinstall and master roles.
+According to the [ansible docs](https://docs.ansible.com/ansible/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable),
+those cannot be overridden from the group vars. In order to override, one should use
+the `-e` runtime flags (most simple way) or other layers described in the docs.
 
 Kubespray uses only a few layers to override things (or expect them to
-be overriden for roles):
+be overridden for roles):
 
 Layer | Comment
 ------|--------
@@ -97,8 +94,8 @@ block vars (only for tasks in block) | Kubespray overrides for internal roles' l
 task vars (only for the task) | Unused for roles, but only for helper scripts
 **extra vars** (always win precedence) | override with ``ansible-playbook -e @foo.yml``
 
-Ansible tags
-------------
+## Ansible tags
+
 The following tags are defined in playbooks:
 
 |                 Tag name | Used for
@@ -110,7 +107,6 @@ The following tags are defined in playbooks:
 |                   calico | Network plugin Calico
 |                    canal | Network plugin Canal
 |           cloud-provider | Cloud-provider related tasks
-|                  dnsmasq | Configuring DNS stack for hosts and K8s apps
 |                   docker | Configuring docker for hosts
 |                 download | Fetching container images to a delegate host
 |                     etcd | Configuring etcd cluster
@@ -123,7 +119,6 @@ The following tags are defined in playbooks:
 |                hyperkube | Manipulations with K8s hyperkube image
 |          k8s-pre-upgrade | Upgrading K8s cluster
 |              k8s-secrets | Configuring K8s certs/keys
-|                      kpm | Installing K8s apps definitions with KPM
 |           kube-apiserver | Configuring static pod kube-apiserver
 |  kube-controller-manager | Configuring static pod kube-controller-manager
 |                  kubectl | Installing kubectl and bash completion
@@ -142,43 +137,49 @@ The following tags are defined in playbooks:
 |                  upgrade | Upgrading, f.e. container images/binaries
 |                   upload | Distributing images/binaries across hosts
 |                    weave | Network plugin Weave
+|              ingress_alb | AWS ALB Ingress Controller
 
 Note: Use the ``bash scripts/gen_tags.sh`` command to generate a list of all
 tags found in the codebase. New tags will be listed with the empty "Used for"
 field.
 
-Example commands
-----------------
+## Example commands
+
 Example command to filter and apply only DNS configuration tasks and skip
 everything else related to host OS configuration and downloading images of containers:
 
+```ShellSession
+ansible-playbook -i inventory/sample/hosts.ini cluster.yml --tags preinstall,facts --skip-tags=download,bootstrap-os
 ```
-ansible-playbook -i inventory/inventory.ini cluster.yml  --tags preinstall,dnsmasq,facts --skip-tags=download,bootstrap-os
-```
+
 And this play only removes the K8s cluster DNS resolver IP from hosts' /etc/resolv.conf files:
+
+```ShellSession
+ansible-playbook -i inventory/sample/hosts.ini -e dns_mode='none' cluster.yml --tags resolvconf
 ```
-ansible-playbook -i inventory/inventory.ini -e dns_server='' cluster.yml --tags resolvconf
-```
-And this prepares all container images localy (at the ansible runner node) without installing
+
+And this prepares all container images locally (at the ansible runner node) without installing
 or upgrading related stuff or trying to upload container to K8s cluster nodes:
-```
-ansible-playbook -i inventory/inventory.ini cluster.yml \
+
+```ShellSession
+ansible-playbook -i inventory/sample/hosts.ini cluster.yml \
     -e download_run_once=true -e download_localhost=true \
     --tags download --skip-tags upload,upgrade
 ```
 
 Note: use `--tags` and `--skip-tags` wise and only if you're 100% sure what you're doing.
 
-Bastion host
---------------
+## Bastion host
+
 If you prefer to not make your nodes publicly accessible (nodes with private IPs only),
 you can use a so called *bastion* host to connect to your nodes. To specify and use a bastion,
 simply add a line to your inventory, where you have to replace x.x.x.x with the public IP of the
 bastion host.
 
-```
-bastion ansible_ssh_host=x.x.x.x
+```ShellSession
+[bastion]
+bastion ansible_host=x.x.x.x
 ```
 
 For more information about Ansible and bastion hosts, read
-[Running Ansible Through an SSH Bastion Host](http://blog.scottlowe.org/2015/12/24/running-ansible-through-ssh-bastion-host/)
+[Running Ansible Through an SSH Bastion Host](https://blog.scottlowe.org/2015/12/24/running-ansible-through-ssh-bastion-host/)

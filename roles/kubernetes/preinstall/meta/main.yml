@@ -2,5 +2,7 @@
 dependencies:
   - role: adduser
     user: "{{ addusers.kube }}"
-    tags: kubelet
-    when: not is_atomic
+    when:
+      - not is_fedora_coreos
+    tags:
+      - kubelet

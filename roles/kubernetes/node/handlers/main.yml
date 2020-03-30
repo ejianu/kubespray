@@ -1,12 +1,13 @@
 ---
-- name: restart kubelet
+- name: Node | restart kubelet
   command: /bin/true
   notify:
     - Kubelet | reload systemd
     - Kubelet | reload kubelet
 
 - name: Kubelet | reload systemd
-  command: systemctl daemon-reload
+  systemd:
+    daemon_reload: true
 
 - name: Kubelet | reload kubelet
   service:

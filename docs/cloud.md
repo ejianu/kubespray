@@ -1,22 +1,13 @@
-Cloud providers
-==============
+# Cloud providers
 
-#### Provisioning
+## Provisioning
 
-You can use kubespray-cli to start new instances on cloud providers
-here's an example
-```
-kubespray [aws|gce] --nodes 2 --etcd 3 --cluster-name test-smana
-```
+You can deploy instances in your cloud environment in several different ways. Examples include Terraform, Ansible (ec2 and gce modules), and manual creation.
 
-#### Deploy kubernetes
+## Deploy kubernetes
 
-With kubespray-cli
-```
-kubespray deploy [--aws|--gce] -u admin
-```
+With ansible-playbook command
 
-Or ansible-playbook command
-```
+```ShellSession
 ansible-playbook -u smana -e ansible_ssh_user=admin -e cloud_provider=[aws|gce] -b --become-user=root -i inventory/single.cfg cluster.yml
 ```
