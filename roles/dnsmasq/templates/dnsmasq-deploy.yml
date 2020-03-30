@@ -3,7 +3,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: dnsmasq
-  namespace: "{{system_namespace}}"
+  namespace: "kube-system"
   labels:
     k8s-app: dnsmasq
     kubernetes.io/cluster-service: "true"
@@ -57,7 +57,6 @@ spec:
               mountPath: /etc/dnsmasq.d
             - name: etcdnsmasqdavailable
               mountPath: /etc/dnsmasq.d-available
-
       volumes:
         - name: etcdnsmasqd
           hostPath:
