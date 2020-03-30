@@ -90,3 +90,11 @@
   roles:
     - { role: kubespray-defaults}
     - { role: kubernetes-apps, tags: apps }
+
+#test change here
+#######
+#  ☆ ∩∩ （ • •）☆
+#  ┏━∪∪━━━━━━━━┓
+#  ☆
+#  ❝ LIFE IS AN ENDLESS PIT OF SUFFERING AND DESPAIR。 ❞
+#  ┗━━━━━━━━━━━┛
